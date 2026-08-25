@@ -1,5 +1,5 @@
 import createHttpError from 'http-errors';
-import { primsa } from '../../../config/prisma.js';
+import { prisma } from '../../../config/prisma.js';
 import bcrypt from 'bcrypt';
 import type { AuthInputLogin } from '../validations/auth.schema.js';
 import { CreateAccessToken, CreateRefreshToken, VerifyRefreshToken } from '../../../utils/jwt.js';
@@ -7,7 +7,7 @@ import { CreateAccessToken, CreateRefreshToken, VerifyRefreshToken } from '../..
 // Login
 export const login = async (data: AuthInputLogin) => {
     // Cek Data User, Apakah Sesuai?
-    const user = await primsa.user.findFirst({
+    const user = await prisma.user.findFirst({
         where: { email: data.email },
     });
 
@@ -48,7 +48,7 @@ export const login = async (data: AuthInputLogin) => {
     const tokenHash = await bcrypt.hash(RefreshToken, 10);
 
     // Save to Database RefreshToken
-    await primsa.refreshToken.create({
+    await prisma.refreshToken.create({
         data: {
             id: tokenId,
             userId: user.id,
@@ -76,7 +76,7 @@ export const refresh = async (refreshToken: string) => {
     // Cek Semua, Apaakah valid?
     // Generate New AccessToken
 
-    const session = await primsa.refreshToken.findFirst({
+    const session = await prisma.refreshToken.findFirst({
         where: { id: payload.tokenId },
         include: { user: true },
     });
@@ -118,7 +118,7 @@ export const logout = async (refreshToken: string) => {
     }
 
     const payload = VerifyRefreshToken(refreshToken);
-    const session = await primsa.refreshToken.findFirst({
+    const session = await prisma.refreshToken.findFirst({
         where: { id: payload.tokenId },
     });
 
@@ -130,7 +130,7 @@ export const logout = async (refreshToken: string) => {
         throw createHttpError.Unauthorized('RefreshToken Already Revoked');
     }
 
-    await primsa.refreshToken.update({
+    await prisma.refreshToken.update({
         where: { id: session.id },
         data: {
             revokedAt: new Date(),
