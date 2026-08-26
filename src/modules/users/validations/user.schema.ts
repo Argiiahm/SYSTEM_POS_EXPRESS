@@ -9,9 +9,7 @@ export const UserSchema = z.object({
         message: 'Invalid Indonesia Number. (example: 0821xxx or 622xxxx)',
     }),
     password: z.string().min(8, 'Password Minimum 8 Character'),
-    role: z
-        .enum(['waiter', 'admin', 'finance', 'foodKitchen', 'beverageStation'])
-        .default('waiter'),
+    roleId: z.string().min(1, 'RoleId Required'),
 });
 
 export type UserInput = z.infer<typeof UserSchema>;

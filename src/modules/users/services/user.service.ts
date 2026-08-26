@@ -30,7 +30,7 @@ export const createUser = async (data: UserInput) => {
             email: data.email,
             telp: data.telp,
             password: hashPassword,
-            role: data.role,
+            roleId: data.roleId,
         },
         select: {
             name: true,
@@ -63,7 +63,7 @@ export const updateUser = async (userId: string, data: UserInput) => {
             email: data.email,
             telp: data.telp,
             password: hashPassword,
-            role: data.role,
+            roleId: data.roleId,
         },
         select: {
             name: true,

@@ -9,6 +9,7 @@ export const login = async (data: AuthInputLogin) => {
     // Cek Data User, Apakah Sesuai?
     const user = await prisma.user.findFirst({
         where: { email: data.email },
+        include: { role: true },
     });
 
     if (!user) {
@@ -35,7 +36,7 @@ export const login = async (data: AuthInputLogin) => {
     const AccessToken = CreateAccessToken({
         userId: user.id,
         email: user.email,
-        role: user.role,
+        role: user.role.name,
     });
 
     // Payload RefreshToken
@@ -78,7 +79,13 @@ export const refresh = async (refreshToken: string) => {
 
     const session = await prisma.refreshToken.findFirst({
         where: { id: payload.tokenId },
-        include: { user: true },
+        include: {
+            user: {
+                include: {
+                    role: true,
+                },
+            },
+        },
     });
 
     if (!session) {
@@ -103,7 +110,7 @@ export const refresh = async (refreshToken: string) => {
     const AccessToken = CreateAccessToken({
         userId: session.user.id,
         email: session.user.email,
-        role: session.user.role,
+        role: session.user.role.name,
     });
 
     return {

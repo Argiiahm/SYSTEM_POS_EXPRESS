@@ -1,9 +1,9 @@
 import createHttpError from 'http-errors';
-import { Role } from '../generated/prisma/client.js';
+import { RoleList } from '../generated/prisma/client.js';
 import type { Request, Response, NextFunction } from 'express';
 
 export const authorization =
-    (...roles: Role[]) =>
+    (...roles: RoleList[]) =>
     (req: Request, _res: Response, next: NextFunction) => {
         if (!req.user?.role) {
             return next(createHttpError.Unauthorized('Unauthorization'));

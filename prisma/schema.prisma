@@ -14,12 +14,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
+enum RoleList {
   waiter
   admin
   finance
   foodKitchen // Dapur Makanan
   beverageStation // Dapur Minuman
+}
+
+model Role {
+  id   String   @id @default(uuid())
+  name RoleList @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
 }
 
 model User {
@@ -29,7 +38,8 @@ model User {
   telp  String @unique
 
   password      String
-  role          Role           @default(waiter)
+  roleId        String
+  role          Role           @relation(fields: [roleId], references: [id])
   refreshTokens refreshToken[]
 
   createdAt DateTime @default(now())
