@@ -26,9 +26,10 @@ model Role {
   id   String   @id @default(uuid())
   name RoleList @unique
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   users     User[]
+  products  Products[]
 }
 
 model User {
@@ -55,6 +56,34 @@ model refreshToken {
 
   expiresAt DateTime
   revokedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id   String @id @default(uuid())
+  name String @unique
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  products  Products[]
+}
+
+model Products {
+  id          String  @id @default(uuid())
+  imageCover  String?
+  productName String
+  price       Int     @default(0)
+  description String
+
+  // Category
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  // Role Station / yang menangani
+  role   Role?   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  roleId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
