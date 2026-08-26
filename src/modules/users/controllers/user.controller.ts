@@ -57,7 +57,7 @@ export const updateUser = asyncHandler(
 // Delete User
 export const deleteUser = asyncHandler(async (req: Request<{ userId: string }>, res: Response) => {
     const userId = req.params.userId;
-    console.log(userId);
+
     await UserService.deleteUser(userId);
     return res.status(200).json({
         success: true,
