@@ -23,6 +23,16 @@ export const createUser = async (data: UserInput) => {
         throw createHttpError.Conflict('No telp Already Registered');
     }
 
+    // Cek Apakah Request Role Ada Dan Sama Seperti
+    // Yang Ada Di Database?
+    const role = await prisma.role.findUnique({
+        where: { id: data.roleId },
+    });
+
+    if (!role) {
+        throw createHttpError.BadRequest('Invalid RoleId');
+    }
+
     const hashPassword = await bcrypt.hash(data.password, 10);
     const user = await prisma.user.create({
         data: {
@@ -30,13 +40,17 @@ export const createUser = async (data: UserInput) => {
             email: data.email,
             telp: data.telp,
             password: hashPassword,
-            roleId: data.roleId,
+            roleId: role.id,
         },
         select: {
             name: true,
             email: true,
             telp: true,
-            role: true,
+            role: {
+                select: {
+                    name: true,
+                },
+            },
         },
     });
 
@@ -55,25 +69,38 @@ export const updateUser = async (userId: string, data: UserInput) => {
 
     // Hash Password
     const hashPassword = await bcrypt.hash(data.password, 10);
+    // Cek Apakah Request Role Ada Dan Sama Seperti
+    // Yang Ada Di Database?
+    const role = await prisma.role.findUnique({
+        where: { id: data.roleId },
+    });
 
-    await prisma.user.update({
+    if (!role) {
+        throw createHttpError.BadRequest('Invalid RoleId');
+    }
+
+    const result = await prisma.user.update({
         where: { id: user.id },
         data: {
             name: data.name,
             email: data.email,
             telp: data.telp,
             password: hashPassword,
-            roleId: data.roleId,
+            roleId: role.id,
         },
         select: {
             name: true,
             email: true,
             telp: true,
-            role: true,
+            role: {
+                select: {
+                    name: true,
+                },
+            },
         },
     });
 
-    return;
+    return result;
 };
 
 // Delete User
