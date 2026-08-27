@@ -1,11 +1,76 @@
 import createHttpError from 'http-errors';
 import { prisma } from '../../../config/prisma.js';
-import type { UserInput } from '../validations/user.schema.js';
+import { type GetUserInput, type UserInput } from '../validations/user.schema.js';
 import bcrypt from 'bcrypt';
 
 // Get Users
-export const getUsers = async () => {
-    return await prisma.user.findMany();
+export const getUsers = async (data: GetUserInput) => {
+    const { page, limit, search, roleId, sortBy, orderBy } = data;
+    const skip = (page - 1) * limit;
+    const where = {
+        ...(search
+            ? {
+                  OR: [
+                      {
+                          name: {
+                              contains: search,
+                              mode: 'insensitive' as const,
+                          },
+                      },
+                      {
+                          email: {
+                              contains: search,
+                              mode: 'insensitive' as const,
+                          },
+                      },
+                      {
+                          telp: {
+                              contains: search,
+                              mode: 'insensitive' as const,
+                          },
+                      },
+                  ],
+              }
+            : {}),
+        ...(roleId ? { roleId } : {}),
+    };
+
+    const [users, count] = await Promise.all([
+        prisma.user.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: {
+                [sortBy]: orderBy,
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                telp: true,
+                role: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+            },
+        }),
+
+        prisma.user.count({ where }),
+    ]);
+
+    return {
+        data: users,
+        pagination: {
+            page,
+            limit,
+            count,
+            countPage: Math.ceil(count / page),
+            hasNextPage: page < Math.ceil(count / limit),
+            hasPreviousPage: page > 1,
+        },
+    };
 };
 
 // Create user

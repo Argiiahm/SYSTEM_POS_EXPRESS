@@ -1,15 +1,23 @@
 import { asyncHandler } from '../../../utils/asyncHandler.js';
 import * as UserService from '../services/user.service.js';
 import type { Request, Response } from 'express';
-import { UserSchema, type UserInput } from '../validations/user.schema.js';
+import { GetUserSchmea, UserSchema, type UserInput } from '../validations/user.schema.js';
 
 // Get Users
-export const getUsers = asyncHandler(async (_req: Request, res: Response) => {
-    const users = await UserService.getUsers();
+export const getUsers = asyncHandler(async (req: Request, res: Response) => {
+    const validateData = GetUserSchmea.safeParse(req.query);
+    if (!validateData.success) {
+        return res.status(400).json({
+            success: false,
+            errors: validateData.error.flatten(),
+        });
+    }
+
+    const result = await UserService.getUsers(validateData.data);
     return res.status(200).json({
         success: true,
-        message: 'Successfully get users',
-        data: users,
+        data: result.data,
+        pagination: result.pagination,
     });
 });
 
