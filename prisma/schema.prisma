@@ -26,10 +26,10 @@ model Role {
   id   String   @id @default(uuid())
   name RoleList @unique
 
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   users     User[]
-  products  Products[]
+  products  Product[]
 }
 
 model User {
@@ -65,17 +65,17 @@ model Category {
   id   String @id @default(uuid())
   name String @unique
 
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  products  Products[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
 }
 
-model Products {
+model Product {
   id          String  @id @default(uuid())
   imageCover  String?
-  productName String
+  productName String  @unique
   price       Int     @default(0)
-  description String
+  description String?
 
   // Category
   categoryId String
