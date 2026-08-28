@@ -1,30 +1,69 @@
 import createHttpError from 'http-errors';
 import { prisma } from '../../../config/prisma.js';
-import type { ProductInput } from '../validations/product.schema.js';
+import type { GetProductInput, ProductInput } from '../validations/product.schema.js';
 
 // Get Products
-export const getProducts = async () => {
-    return await prisma.product.findMany({
-        select: {
-            id: true,
-            productName: true,
-            price: true,
-            description: true,
-            imageCover: true,
-            category: {
-                select: {
-                    id: true,
-                    name: true,
+export const getProducts = async (data: GetProductInput) => {
+    const { page, limit, search, categoryId, roleId, sortBy, orderBy } = data;
+    const skip = (page - 1) * limit;
+
+    const where = {
+        ...(search
+            ? {
+                  productName: {
+                      contains: search,
+                      mode: 'insensitive' as const,
+                  },
+              }
+            : {}),
+
+        ...(categoryId ? { categoryId } : {}),
+        ...(roleId ? { roleId } : {}),
+    };
+
+    const [products, count] = await Promise.all([
+        prisma.product.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: {
+                [sortBy]: orderBy,
+            },
+            select: {
+                id: true,
+                productName: true,
+                price: true,
+                description: true,
+                imageCover: true,
+                category: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+                role: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
                 },
             },
-            role: {
-                select: {
-                    id: true,
-                    name: true,
-                },
-            },
+        }),
+
+        prisma.product.count(),
+    ]);
+
+    return {
+        data: products,
+        pagination: {
+            page,
+            limit,
+            count,
+            countPage: Math.ceil(count / page),
+            hasNextPage: page < Math.ceil(count / limit),
+            hasPreviousPage: page > 1,
         },
-    });
+    };
 };
 
 // Get ProductById

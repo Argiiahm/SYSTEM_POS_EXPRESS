@@ -1,19 +1,31 @@
 import { asyncHandler } from '../../../utils/asyncHandler.js';
 import * as ProductService from '../services/product.service.js';
 import type { Request, Response } from 'express';
-import { ProductSchema, type ProductInput } from '../validations/product.schema.js';
+import {
+    GetProductSchema,
+    ProductSchema,
+    type ProductInput,
+} from '../validations/product.schema.js';
 
 // get Products
-export const getProducts = asyncHandler(async (_req: Request, res: Response) => {
-    const products = await ProductService.getProducts();
+export const getProducts = asyncHandler(async (req: Request, res: Response) => {
+    const validateData = GetProductSchema.safeParse(req.query);
+    if (!validateData.success) {
+        return res.status(400).json({
+            success: false,
+            errors: validateData.error.flatten(),
+        });
+    }
+    const result = await ProductService.getProducts(validateData.data);
     return res.status(200).json({
         success: true,
         message: 'Successfully get products',
-        data: products,
+        data: result.data,
+        pagination: result.pagination,
     });
 });
 
-// get Product By Id
+// get ProductById
 export const getProductById = asyncHandler(
     async (req: Request<{ productId: string }>, res: Response) => {
         const productId = req.params.productId;
