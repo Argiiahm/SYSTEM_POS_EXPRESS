@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-    const roles = ['admin', 'waiter', 'finance', 'foodKitchen', 'beverageStation'] as const;
+    const roles = ['admin', 'waiter', 'cashier', 'foodKitchen', 'beverageStation'] as const;
 
     // Seed Roles
     for (const roleName of roles) {
