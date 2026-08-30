@@ -8,6 +8,7 @@ import UserRouter from './modules/users/routes/UserRoutes.js';
 import CategoryRouter from './modules/categories/routes/CategoryRoutes.js';
 import ProductRouter from './modules/products/routes/ProductRoutes.js';
 import OrderRouter from './modules/orders/routes/orderRoutes.js';
+import OrderItemRouter from './modules/orders/routes/orderItemRoutes.js';
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use('/api/v1', UserRouter);
 app.use('/api/v1', CategoryRouter);
 app.use('/api/v1', ProductRouter);
 app.use('/api/v1', OrderRouter);
+app.use('/api/v1', OrderItemRouter);
 
 app.use(errorHandler);
 export default app;
