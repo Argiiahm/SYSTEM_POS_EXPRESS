@@ -1,6 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import { errorHandler } from './middlewares/error.middleware.js';
+
+import AuthRouter from './modules/auth/routes/authRoutes.js';
+import UserRouter from './modules/users/routes/UserRoutes.js';
+import CategoryRouter from './modules/categories/routes/CategoryRoutes.js';
+import ProductRouter from './modules/products/routes/ProductRoutes.js';
+import OrderRouter from './modules/orders/routes/orderRoutes.js';
+import OrderItemRouter from './modules/orders/routes/orderItemRoutes.js';
 
 const app = express();
 
@@ -8,8 +16,12 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
-app.get('/api/test', (_req, res) => {
-    res.send('Hello from API');
-});
+app.use('/api/v1', AuthRouter);
+app.use('/api/v1', UserRouter);
+app.use('/api/v1', CategoryRouter);
+app.use('/api/v1', ProductRouter);
+app.use('/api/v1', OrderRouter);
+app.use('/api/v1', OrderItemRouter);
 
+app.use(errorHandler);
 export default app;

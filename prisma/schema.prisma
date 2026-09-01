@@ -14,12 +14,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
+enum RoleList {
   waiter
   admin
-  finance
+  cashier
   foodKitchen // Dapur Makanan
   beverageStation // Dapur Minuman
+}
+
+enum statusOrder {
+  open
+  paid
+}
+
+enum statusOrderItem {
+  pending
+  in_progress
+  ready
+  served
+  canceled
+}
+
+enum PaymentMethod {
+  cash
+  qris
+}
+
+model Role {
+  id   String   @id @default(uuid())
+  name RoleList @unique
+
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  users      User[]
+  products   Product[]
+  orderItems OrderItem[]
 }
 
 model User {
@@ -29,23 +58,107 @@ model User {
   telp  String @unique
 
   password      String
-  role          Role           @default(waiter)
+  roleId        String
+  role          Role           @relation(fields: [roleId], references: [id])
   refreshTokens refreshToken[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  orders Order[]
 }
 
 model refreshToken {
   id String @id
 
   tokenHash String
-  user      String
-  userId    User   @relation(fields: [user], references: [id])
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   expiresAt DateTime
   revokedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id   String @id @default(uuid())
+  name String @unique
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
+model Product {
+  id          String  @id @default(uuid())
+  imageCover  String?
+  productName String  @unique
+  price       Int     @default(0)
+  description String?
+
+  // Category
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  // Role Station / yang menangani
+  role   Role?   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  roleId String?
+
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  orderItems OrderItem[]
+}
+
+model Order {
+  id          String      @id @unique
+  tableNumber String
+  status      statusOrder @default(open)
+  totalAmount Int
+
+  waiterId String
+  waiter   User   @relation(fields: [waiterId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderItems OrderItem[]
+  payments   Payment[]
+}
+
+model OrderItem {
+  id String @id @default(uuid())
+
+  // OrderId
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // ProductId
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  quantity Int
+  price    Int
+  subTotal Int
+
+  // assignRole
+  assignedRoleId String
+  assignedRole   Role   @relation(fields: [assignedRoleId], references: [id], onDelete: Cascade)
+
+  status statusOrderItem @default(pending)
+  notes  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  id      String @id @default(uuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  method PaymentMethod @default(cash)
+  amount Int
+  paidAt DateTime      @default(now())
 }
