@@ -113,7 +113,7 @@ model Product {
 
 model Order {
   id          String      @id @unique
-  tableNumber Int
+  tableNumber String
   status      statusOrder @default(open)
   totalAmount Int
 

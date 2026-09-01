@@ -1,8 +1,74 @@
 import createHttpError from 'http-errors';
 import { prisma } from '../../../config/prisma.js';
-import type { OrderInput } from '../validations/order.schema.js';
+import type { PaymentMethodInput, GetOrderInput, OrderInput } from '../validations/order.schema.js';
 
-// Create New Order
+// Get Orders
+export const getOrders = async (data: GetOrderInput) => {
+    const { page, limit, search, status, sortBy, orderBy } = data;
+    const skip = (page - 1) * limit;
+    const where = {
+        ...(search
+            ? {
+                  tableNumber: {
+                      contains: search,
+                      mode: 'insensitive' as const,
+                  },
+              }
+            : {}),
+        ...(status ? { status } : {}),
+    };
+
+    const [orders, count] = await Promise.all([
+        prisma.order.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: {
+                [sortBy]: orderBy,
+            },
+            select: {
+                id: true,
+                tableNumber: true,
+                totalAmount: true,
+                status: true,
+                waiter: {
+                    select: {
+                        name: true,
+                    },
+                },
+                orderItems: {
+                    select: {
+                        product: {
+                            select: {
+                                productName: true,
+                                price: true,
+                            },
+                        },
+                        quantity: true,
+                        subTotal: true,
+                        status: true,
+                    },
+                },
+            },
+        }),
+
+        prisma.order.count({ where }),
+    ]);
+
+    return {
+        data: orders,
+        pagination: {
+            page,
+            limit,
+            count,
+            countPage: Math.ceil(count / page),
+            hasNextPage: page < Math.ceil(count / limit),
+            hasPreviousPage: page > 1,
+        },
+    };
+};
+
+// Create New Order (ROLE: Waiter)
 export const createOrder = async (data: OrderInput) => {
     // Ambil Semua Data Yang Dipesan
     const productIds = data.items.map((item) => item.productId);
@@ -38,7 +104,7 @@ export const createOrder = async (data: OrderInput) => {
     // validasi dan Hitung Order Item
     let totalAmount = 0;
 
-    // Order Item
+    // Order Items
     const orderItems = data.items.map((item) => {
         // Linear Search — cari sebuah data dengan cek elemen array satu per satu sampai ketemu.
         const product = products.find((product) => product.id === item.productId);
@@ -105,6 +171,48 @@ export const createOrder = async (data: OrderInput) => {
             where: { id: orderId },
             include: { orderItems: true },
         });
+    });
+
+    return result;
+};
+
+// Completed Order & Create Payment (ROLE: Cashier)
+export const completedOrder = async (orderId: string, data: PaymentMethodInput) => {
+    // Get Order ById
+    const order = await prisma.order.findFirst({
+        where: { id: orderId, status: 'open' },
+    });
+
+    if (!order) {
+        throw createHttpError.NotFound('OrderId Not Found');
+    }
+
+    if (order.status !== 'open') {
+        throw createHttpError.NotFound('Only supported status Open');
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+        // Create Payment
+        const createPayment = await tx.payment.create({
+            data: {
+                orderId: order.id,
+                amount: order.totalAmount,
+                method: data.method,
+            },
+        });
+
+        // Update Status
+        const updateStatusOrder = await tx.order.update({
+            where: { id: order.id },
+            data: {
+                status: 'paid',
+            },
+        });
+
+        return {
+            createPayment,
+            updateStatusOrder,
+        };
     });
 
     return result;
